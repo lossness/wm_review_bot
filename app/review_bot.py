@@ -3,12 +3,22 @@ import random
 import time
 import json
 import datetime
+import smtplib
 
 
 from private import config
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+
+# Setting paths for review templates and filler words as well as all of weedbell site addresses
+SITES = os.path.join("data", "sites.json")
+RATING_FILLERS = os.path.join('data', 'rating_fillers.json')
+REVIEW_TEMPLATES = os.path.join('data', 'review_templates.json')
+MOBILE_CARRIERS = os.path.join('data', 'carrier_info.json')
+SS_PATH = "C:/Projects/weedmaps_review_bot/data/screenshots/"
 
 
 # Prompts user to enter weedbell delivery drivers(DD) name and phone number
@@ -20,18 +30,31 @@ while dd_name_check.lower() != "y":
     DD_NAME = input("\nEnter the drivers name : ")
     dd_name_check = input("\n'{}'  Is this correct? Y/N : ".format(DD_NAME))
 
-DD_PHONE = input("\nEnter the DRIVERs phone number : ")
+DD_PHONE = input("\nEnter the drivers phone number : ")
 dd_phone_check = input("\n'{}'  Is this correct? Y/N : ".format(DD_PHONE))
 while dd_phone_check.lower() != "y":
-    DD_PHONE = input("\nEnter the DRIVERs phone number : ")
+    DD_PHONE = input("\nEnter the drivers phone number : ")
     dd_phone_check = input("\n'{}'  Is this correct? Y/N :".format(DD_PHONE))
 
-# Setting paths for review templates and filler words as well as all of weedbell site addresses
-SITES = os.path.join("data", "sites.json")
-RATING_FILLERS = os.path.join('data', 'rating_fillers.json')
-REVIEW_TEMPLATES = os.path.join('data', 'review_templates.json')
-MOBILE_CARRIERS = os.path.join('data', 'carrier_info.json')
-SS_PATH = "C:/Projects/weedmaps_review_bot/data/screenshots/"
+print("Please goto https://freecarrierlookup.com/ and enter the drivers phone number to get their carrier.\n")
+
+with open(MOBILE_CARRIERS, encoding='utf-8') as MC:
+    MC_LIST = json.loads(MC.read())
+
+for index, carrier in enumerate(MC_LIST):
+    print(index, carrier)
+
+DD_CARRIER = input("\n Enter the number cooresponding to the drivers mobile carrier from the list above : ")
+DD_C_CHECK = input("\n'{}'  Is this correct? Y/N : ".format(DD_CARRIER))
+while DD_C_CHECK.lower() != "y":
+    DD_CARRIER = input("\n Enter the number cooresponding to the drivers mobile carrier from the list above : ")
+    DD_C_CHECK = input("\n'{}'  Is this correct? Y/N : ".format(DD_CARRIER))
+
+DD_SMS_GATEWAY = ""
+for i, (k, v) in enumerate(MC_LIST.items()):
+    if i == int(DD_CARRIER):
+        DD_SMS_GATEWAY += v
+
 
 with open(SITES, encoding='utf-8') as sites_json, open(RATING_FILLERS, encoding='utf8') as ratings_json, open(REVIEW_TEMPLATES, encoding='utf8') as reviews_json:
     SITES_LIST = json.loads(sites_json.read())
@@ -46,13 +69,13 @@ LONG_DELAY = random.randrange(9, 20)
 REVIEW_XPATH = "//*[@id='content']/div[4]/div/div[2]/div/div[1]/div[2]/h2"
 
 # Opens a chrome instance with debugging enabled to use selenium without chromedriver
-os.startfile (r"C:\Projects\weedmaps_review_bot\data\chrome_shortcut.lnk")
+os.startfile(r"C:\Projects\weedmaps_review_bot\data\chrome_shortcut.lnk")
 time.sleep(10)
 
 # Initialize selenium webdriver and attaches to chrome.exe using debugger port
 CHROME_OPTIONS = Options()
 CHROME_OPTIONS.debugger_address = "127.0.0.1:9222"
-DRIVER = webdriver.Chrome(options=CHROME_OPTIONS, executable_path=r'C:\Utility\BrowserDRIVERs\chromeDRIVER.exe')
+DRIVER = webdriver.Chrome(options=CHROME_OPTIONS, executable_path=r'C:\Utility\Browserdrivers\chromedriver.exe')
 DRIVER.get('https://weedmaps.com/login?mode=email')
 
 print("\nLogging into weedmaps...")
@@ -145,3 +168,31 @@ for site in SITES_LIST:
     time.sleep(LONG_DELAY)
     DRIVER.quit()
 
+
+# Sends the collected screenshots via text message to the delivery driver
+def text_screenshots(phone, gateway, ss_folder, attach_file):
+    # Setup which email and cooresponding server to use to send sms. We will be using gmail.
+    email = config.SMS_EMAIL
+    pas = config.SMS_PASSWORD
+    smtp = "smtp.gmail.com"
+    port = 587
+    server = smtplib.SMTP(smtp, port)
+    server.starttls()
+    server.login(email, pas)
+    msg = MIMEMultipart()
+    msg['Subject'] = 'Weedmaps reviews'
+    msg.preamble = 'Weedmaps reviews'
+    # Iterates over the screenshot folder and sends all screenshots from today
+    for file in os.listdir(ss_folder):
+        filename = os.fsdecode(file)
+        # looks for images with the drivers name and todays date
+        if filename.startswith("{}_{}".format(DD_NAME, TODAY)):
+            msg['From'] = email
+            msg['To'] = "{}{}".format(phone, gateway)
+            fp = open("{}/{}".format(ss_folder, attach_file), 'rb')
+            img = MIMEImage(fp.read())
+            msg.attach(img)
+            server.send_message(msg)
+            time.sleep(2)
+            print("\nPicture sent to driver")
+    server.quit()

@@ -15,3 +15,8 @@ tests/tor_tests/tor_test.py
 tests/tor_tests/ttest.py
 .vscode/launch.json
 .vscode/settings.json
+tests/cv2test.py
+tests/img_processing.py
+tests/iterate_over_images.py
+tests/math_capatcha_bypass.py
+tests/remote_chrome.py
