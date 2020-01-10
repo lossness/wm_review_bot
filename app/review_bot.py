@@ -50,6 +50,7 @@ while DD_C_CHECK.lower() != "y":
     DD_CARRIER = input("\n Enter the number cooresponding to the drivers mobile carrier from the list above : ")
     DD_C_CHECK = input("\n'{}'  Is this correct? Y/N : ".format(DD_CARRIER))
 
+# add an index number to each mobile carrier in the dict and then picks the carrier from the users answer to the carrier prompt
 DD_SMS_GATEWAY = ""
 for i, (k, v) in enumerate(MC_LIST.items()):
     if i == int(DD_CARRIER):
@@ -78,46 +79,54 @@ CHROME_OPTIONS.debugger_address = "127.0.0.1:9222"
 DRIVER = webdriver.Chrome(options=CHROME_OPTIONS, executable_path=r'C:\Utility\Browserdrivers\chromedriver.exe')
 DRIVER.get('https://weedmaps.com/login?mode=email')
 
-print("\nLogging into weedmaps...")
+#Test if element exists to scroll to
+def check_exists_by_xpath(xpath):
+    try:
+        DRIVER.find_element_by_xpath(xpath)
+    except NoSuchElementException:
+        return False
+    return True
+
+print("\nChecking if browser is currently logged into weedmaps...")
 DRIVER.implicitly_wait(LONG_DELAY)
-USER_FIELD = DRIVER.find_element_by_xpath('//*[@id="user_username"]')
-PASSWORD_FIELD = DRIVER.find_element_by_xpath('//*[@id="user_password"]')
+if check_exists_by_xpath('//*[@id="user_username"]'):
+    print("\nLogging into weedmaps...")
+    USER_FIELD = DRIVER.find_element_by_xpath('//*[@id="user_username"]')
+    PASSWORD_FIELD = DRIVER.find_element_by_xpath('//*[@id="user_password"]')
+    # These functions type the username and password with a short delay randomized between 0-1 seconds between each character
+    print("\nTyping username")
+    for character in config.WEEDMAPS_USERNAME:
+        USER_FIELD.send_keys(character)
+        time.sleep(SHORT_DELAY)
+    print("\nTyping password")
+    for character in config.WEEDMAPS_PASSWORD:
+        PASSWORD_FIELD.send_keys(character)
+        time.sleep(SHORT_DELAY)
 
-# These functions type the username and password with a short delay randomized between 0-1 seconds between each character
-for character in config.WEEDMAPS_USERNAME:
-    USER_FIELD.send_keys(character)
-    time.sleep(SHORT_DELAY)
-
-for character in config.WEEDMAPS_PASSWORD:
-    PASSWORD_FIELD.send_keys(character)
-    time.sleep(SHORT_DELAY)
-
-DRIVER.find_element_by_xpath('//*[@id="login"]').click()
-print("\nLogged in!")
+    DRIVER.find_element_by_xpath('//*[@id="login"]').click()
+    print("\nLogged in!")
+else:
+    print("\nAlready logged in. Navigating to the first site.")
 
 
 # Goes over each weedbell location one by one and rates the review 5 stars, types a randomly chosen review from 
 # the list of reviews and inserts the DRIVERs name to get credit
 for site in SITES_LIST:
     DRIVER.get(SITES_LIST[site])
-    page_review_button = DRIVER.find_element_by_xpath("/html/body/div[1]/div/div/div[1]/div[2]/div[1]/div[2]/div/div/div/div[1]/div[3]/button[1]")
     page_review_button = DRIVER.find_element_by_xpath("//button[1]")
     page_review_button = DRIVER.find_element_by_xpath("//button[@data-test-id='review-button']")
     page_review_button.click()
 
-    five_star_button = DRIVER.find_element_by_xpath("/html/body/div[6]/div/div/div/div/div[2]/div/div/div[1]/div[1]/div/button[5]")
     five_star_button = DRIVER.find_element_by_xpath("//button[5]")
     five_star_button = DRIVER.find_element_by_xpath("//button[@alt='5 Stars']")
     five_star_button.click()
 
-    review_title_field = DRIVER.find_element_by_xpath("/html/body/div[6]/div/div/div/div/div[2]/div/div/div[1]/div[2]/label/textarea")
     review_title_field = DRIVER.find_element_by_xpath("//textarea")
     review_title_field = DRIVER.find_element_by_xpath("//textarea[@data-test-id='title-input']")
     for letter in DD_NAME:
         review_title_field.send_keys(letter)
         time.sleep(SHORT_DELAY)
 
-    review_body_field = DRIVER.find_element_by_xpath("/html/body/div[6]/div/div/div/div/div[2]/div/div/div[1]/div[3]/label/textarea")
     review_body_field = DRIVER.find_element_by_xpath("//textarea")
     review_body_field = DRIVER.find_element_by_xpath("//textarea[@data-test-id='body-input']")
 
@@ -129,26 +138,16 @@ for site in SITES_LIST:
         review_body_field.send_keys(char)
         time.sleep(SHORT_DELAY)
 
-    post_review_button = DRIVER.find_element_by_xpath("/html/body/div[5]/div/div/div/div/div[2]/div/div/div[2]/button")
     post_review_button = DRIVER.find_element_by_xpath("//button")
     post_review_button = DRIVER.find_element_by_xpath("//button[@data-test-id='submit-review']")
     post_review_button.click()
     time.sleep(LONG_DELAY)
 
-    ok_review_button = DRIVER.find_element_by_xpath("/html/body/div[6]/div/div/div/div/div[2]/div/div/div[2]/button")
     ok_review_button = DRIVER.find_element_by_xpath("//button")
     ok_review_button.click()
     time.sleep(LONG_DELAY)
     #
     file_number = 1
-    #Test if element exists to scroll to
-    def check_exists_by_xpath(xpath):
-        try:
-            DRIVER.find_element_by_xpath(xpath)
-        except NoSuchElementException:
-            return False
-        return True
-
 
     if check_exists_by_xpath(REVIEW_XPATH):
         REVIEW_ELEMENT = DRIVER.find_element_by_xpath(REVIEW_XPATH)
@@ -160,6 +159,7 @@ for site in SITES_LIST:
         TODAY = datetime.date.today()
         TODAY.strftime("%m-%d-%y")
         DRIVER.save_screenshot("{}{}_{}_{}.png".format(SS_PATH, DD_NAME, TODAY, file_number))
+        print("\nReview complete & screenshot taken!")
     else:
         print("Review header not found.. skipping screenshot")
         DRIVER.quit()
@@ -196,3 +196,4 @@ def text_screenshots(phone, gateway, ss_folder, attach_file):
             time.sleep(2)
             print("\nPicture sent to driver")
     server.quit()
+print("\nAll reviews sent to driver! Enjoy your free joints :D")
