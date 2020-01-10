@@ -20,3 +20,6 @@ tests/img_processing.py
 tests/iterate_over_images.py
 tests/math_capatcha_bypass.py
 tests/remote_chrome.py
+app/private/__pycache__/__init__.cpython-37.pyc
+app/private/__pycache__/config.cpython-37.pyc
+tests/xpath_tests.py
