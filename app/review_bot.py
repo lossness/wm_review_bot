@@ -5,7 +5,7 @@ import json
 import datetime
 import smtplib
 
-
+from tqdm import tqdm
 from private import config
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -111,9 +111,9 @@ else:
 FINDPHRASE = lambda s, var: var.lower() in s.lower()
 # Goes over each weedbell location one by one and rates the review 5 stars, types a randomly chosen review from 
 # the list of reviews and inserts the DRIVERs name to get credit
-for site in SITES_LIST:
+for site in tqdm(SITES_LIST):
     DRIVER.get(SITES_LIST[site])
-    time.sleep(7)
+    time.sleep(5)
     if FINDPHRASE(DRIVER.page_source, 'alt="5 Stars"'):
         print("\nNo review posted in the last 30 days.  Posting..")
         page_review_button = DRIVER.find_element_by_xpath("//button[1]")
@@ -148,9 +148,8 @@ for site in SITES_LIST:
 
         ok_review_button = DRIVER.find_element_by_xpath("//button")
         ok_review_button.click()
+        print("\nReview posted to the {} location.".format(site))
         time.sleep(LONG_DELAY)
-        #
-        file_number = 1
 
         if check_exists_by_xpath(REVIEW_XPATH):
             REVIEW_ELEMENT = DRIVER.find_element_by_xpath(REVIEW_XPATH)
@@ -161,7 +160,7 @@ for site in SITES_LIST:
             DRIVER.execute_script("window.scrollBy(0, -150);")
             TODAY = datetime.date.today()
             TODAY.strftime("%m-%d-%y")
-            DRIVER.save_screenshot("{}{}_{}_{}.png".format(SS_PATH, DD_NAME, TODAY, file_number))
+            DRIVER.save_screenshot("{}{}_{}_{}.png".format(SS_PATH, DD_NAME, TODAY, site))
             print("\nReview complete & screenshot taken!")
         else:
             print("Review header not found.. skipping screenshot")
@@ -173,7 +172,8 @@ for site in SITES_LIST:
         for num in list(range(0, 31)):
             if FINDPHRASE(DRIVER.page_source, 'create a new one in<!-- --> <!-- -->{} days'.format(str(num))):
                 print("You must wait {} days to post another review".format(num))
-
+    print("\nAll reviews posted and the screenshots saved.")
+    print("\nProceeding to text the screenshots to the delivery driver.")
     time.sleep(LONG_DELAY)
     DRIVER.quit()
 
@@ -192,7 +192,7 @@ def text_screenshots(phone, gateway, ss_folder, attach_file):
     msg['Subject'] = 'Weedmaps reviews'
     msg.preamble = 'Weedmaps reviews'
     # Iterates over the screenshot folder and sends all screenshots from today
-    for file in os.listdir(ss_folder):
+    for file in tqdm(os.listdir(ss_folder)):
         filename = os.fsdecode(file)
         # looks for images with the drivers name and todays date
         if filename.startswith("{}_{}".format(DD_NAME, TODAY)):
@@ -205,4 +205,4 @@ def text_screenshots(phone, gateway, ss_folder, attach_file):
             time.sleep(2)
             print("\nPicture sent to driver")
     server.quit()
-print("\nAll reviews sent to driver! Enjoy your free joints :D")
+print("\nAll reviews sent to driver! Enjoy..")
