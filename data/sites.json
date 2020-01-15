@@ -1,10 +1,15 @@
 {
-    "menifee": "https://weedmaps.com/deliveries/weedbell",
-    "murrieta": "https://weedmaps.com/deliveries/weedbell-open-late",
-    "temecula": "https://weedmaps.com/deliveries/weedbell-2",
-    "lake_elsinore": "https://weedmaps.com/deliveries/weedbell-wholesale-open-late",
-    "ontario": "https://weedmaps.com/deliveries/rab-delivery",
-    "corona": "https://weedmaps.com/deliveries/weedbell-3",
-    "jurupa_valley": "https://weedmaps.com/deliveries/weedbell-open-late-7",
-    "riverside": "https://weedmaps.com/deliveries/weedbell-4"
+    "menifee": "https://weedmaps.com/deliveries/weedbell-delivery-menifee/reviews",
+    "murrieta": "https://weedmaps.com/deliveries/weedbell-delivery-murrieta-temecula/reviews",
+    "temecula": "https://weedmaps.com/deliveries/weebell-temecula/reviews",
+    "lake_elsinore": "https://weedmaps.com/deliveries/weedbell-delivery-lake-elsinore/reviews",
+    "ontario": "https://weedmaps.com/deliveries/weedbell-delivery-ontario-montclair/reviews",
+    "corona": "https://weedmaps.com/deliveries/weedbell-delivery-corona/reviews",
+    "jurupa_valley": "https://weedmaps.com/deliveries/weedbell-delivery-open-late-jurupa-valley/reviews",
+    "riverside": "https://weedmaps.com/deliveries/weedbell-delivery-riverside/reviews",
+    "chino": "https://weedmaps.com/deliveries/weedbell-delivery-chino/reviews",
+    "fontana": "https://weedmaps.com/deliveries/weedbell-delivery-fontana/reviews",
+    "perris": "https://weedmaps.com/deliveries/weedbell-delivery-perris/reviews",
+    "rancho cucamonga": "https://weedmaps.com/deliveries/weedbell-delivery-rancho-cucamonga/reviews",
+    "pomona": "https://weedmaps.com/deliveries/weedbell-delivery-pomona/reviews"
 }
