@@ -111,7 +111,7 @@ else:
 FINDPHRASE = lambda s, var: var.lower() in s.lower()
 # Goes over each weedbell location one by one and rates the review 5 stars, types a randomly chosen review from 
 # the list of reviews and inserts the DRIVERs name to get credit
-for site in tqdm(SITES_LIST):
+for site in SITES_LIST:
     DRIVER.get(SITES_LIST[site])
     time.sleep(5)
     if FINDPHRASE(DRIVER.page_source, 'alt="5 Stars"'):
@@ -179,7 +179,7 @@ for site in tqdm(SITES_LIST):
 
 
 # Sends the collected screenshots via text message to the delivery driver
-def text_screenshots(phone, gateway, ss_folder, attach_file):
+def text_screenshots(phone, gateway, ss_location):
     # Setup which email and cooresponding server to use to send sms. We will be using gmail.
     email = config.SMS_EMAIL
     pas = config.SMS_PASSWORD
@@ -192,17 +192,19 @@ def text_screenshots(phone, gateway, ss_folder, attach_file):
     msg['Subject'] = 'Weedmaps reviews'
     msg.preamble = 'Weedmaps reviews'
     # Iterates over the screenshot folder and sends all screenshots from today
-    for file in tqdm(os.listdir(ss_folder)):
+    for file in os.listdir(ss_location):
         filename = os.fsdecode(file)
         # looks for images with the drivers name and todays date
         if filename.startswith("{}_{}".format(DD_NAME, TODAY)):
             msg['From'] = email
             msg['To'] = "{}{}".format(phone, gateway)
-            fp = open("{}/{}".format(ss_folder, attach_file), 'rb')
+            fp = open("{}/{}".format(ss_location, filename), 'rb')
             img = MIMEImage(fp.read())
             msg.attach(img)
             server.send_message(msg)
             time.sleep(2)
             print("\nPicture sent to driver")
     server.quit()
+
+text_screenshots(DD_PHONE, DD_CARRIER, SS_PATH)
 print("\nAll reviews sent to driver! Enjoy..")
