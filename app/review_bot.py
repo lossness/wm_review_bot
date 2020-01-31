@@ -9,8 +9,13 @@ from tqdm import tqdm
 from private import config
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 from email.mime.image import MIMEImage
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By  
 from email.mime.multipart import MIMEMultipart
 
 # Setting paths for review templates and filler words as well as all of weedbell site addresses
@@ -111,67 +116,74 @@ else:
 FINDPHRASE = lambda s, var: var.lower() in s.lower()
 # Goes over each weedbell location one by one and rates the review 5 stars, types a randomly chosen review from 
 # the list of reviews and inserts the DRIVERs name to get credit
+class ContinueLoop(Exception):
+    pass
+KeepLoopin = ContinueLoop
+
+#actions = ActionChains(DRIVER)
+#wait = WebDriverWait(DRIVER, 6)
+
 for site in SITES_LIST:
-    DRIVER.get(SITES_LIST[site])
-    time.sleep(5)
-    if FINDPHRASE(DRIVER.page_source, 'alt="5 Stars"'):
-        print("\nNo review posted in the last 30 days.  Posting..")
-        page_review_button = DRIVER.find_element_by_xpath("//button[1]")
-        page_review_button = DRIVER.find_element_by_xpath("//button[@data-test-id='review-button']")
-        page_review_button.click()
+    try:
+        DRIVER.get(SITES_LIST[site])
+        time.sleep(5)
+        if FINDPHRASE(DRIVER.page_source, 'alt="5 Stars"'):
+            print("\nNo review posted in the last 30 days.  Posting..")
+            page_review_button = DRIVER.find_element_by_xpath("//button[5]")
+            page_review_button = DRIVER.find_element_by_xpath("//button[@alt='5 Stars']")
+            page_review_button.click()
 
-        five_star_button = DRIVER.find_element_by_xpath("//button[5]")
-        five_star_button = DRIVER.find_element_by_xpath("//button[@alt='5 Stars']")
-        five_star_button.click()
+            review_title_field = DRIVER.find_element_by_xpath("//textarea")
+            review_title_field = DRIVER.find_element_by_xpath("//textarea[@data-test-id='title-input']")
+            for letter in DD_NAME:
+                review_title_field.send_keys(letter)
+                time.sleep(SHORT_DELAY)
 
-        review_title_field = DRIVER.find_element_by_xpath("//textarea")
-        review_title_field = DRIVER.find_element_by_xpath("//textarea[@data-test-id='title-input']")
-        for letter in DD_NAME:
-            review_title_field.send_keys(letter)
-            time.sleep(SHORT_DELAY)
+            review_body_field = DRIVER.find_element_by_xpath("//textarea")
+            review_body_field = DRIVER.find_element_by_xpath("//textarea[@data-test-id='body-input']")
 
-        review_body_field = DRIVER.find_element_by_xpath("//textarea")
-        review_body_field = DRIVER.find_element_by_xpath("//textarea[@data-test-id='body-input']")
+            random_review = random.choice(list(REVIEWS_LIST.values()))
+            random_rating = random.choice(list(RATINGS_LIST.values()))
+            randomized_body = random_review.format(DD_NAME, random_rating)
 
-        random_review = random.choice(list(REVIEWS_LIST.values()))
-        random_rating = random.choice(list(RATINGS_LIST.values()))
-        randomized_body = random_review.format(DD_NAME, random_rating)
+            for char in randomized_body:
+                review_body_field.send_keys(char)
+                time.sleep(SHORT_DELAY)
 
-        for char in randomized_body:
-            review_body_field.send_keys(char)
-            time.sleep(SHORT_DELAY)
+            post_review_button = DRIVER.find_element_by_xpath("//button")
+            post_review_button = DRIVER.find_element_by_xpath("//button[@data-test-id='submit-review']")
+            post_review_button.click()
+            time.sleep(LONG_DELAY)
 
-        post_review_button = DRIVER.find_element_by_xpath("//button")
-        post_review_button = DRIVER.find_element_by_xpath("//button[@data-test-id='submit-review']")
-        post_review_button.click()
-        time.sleep(LONG_DELAY)
+            ok_review_button = DRIVER.find_element_by_xpath("//button")
+            ok_review_button.click()
+            print("\nReview posted to the {} location.".format(site))
+            time.sleep(LONG_DELAY)
 
-        ok_review_button = DRIVER.find_element_by_xpath("//button")
-        ok_review_button.click()
-        print("\nReview posted to the {} location.".format(site))
-        time.sleep(LONG_DELAY)
-
-        if check_exists_by_xpath(REVIEW_XPATH):
-            REVIEW_ELEMENT = DRIVER.find_element_by_xpath(REVIEW_XPATH)
-            print("Review header found.. proceeding..")
-            time.sleep(5)
-            #Execute script runs javascript code to scroll to the beginning of the user reviews and the scrolls back up by 150px to get the proper screenshot
-            DRIVER.execute_script("return arguments[0].scrollIntoView();", REVIEW_ELEMENT)
-            DRIVER.execute_script("window.scrollBy(0, -150);")
-            TODAY = datetime.date.today()
-            TODAY.strftime("%m-%d-%y")
-            DRIVER.save_screenshot("{}{}_{}_{}.png".format(SS_PATH, DD_NAME, TODAY, site))
-            print("\nReview complete & screenshot taken!")
+            if check_exists_by_xpath(REVIEW_XPATH):
+                REVIEW_ELEMENT = DRIVER.find_element_by_xpath(REVIEW_XPATH)
+                print("Review header found.. proceeding..")
+                time.sleep(5)
+                #Execute script runs javascript code to scroll to the beginning of the user reviews and the scrolls back up by 150px to get the proper screenshot
+                DRIVER.execute_script("return arguments[0].scrollIntoView();", REVIEW_ELEMENT)
+                DRIVER.execute_script("window.scrollBy(0, -150);")
+                TODAY = datetime.date.today()
+                TODAY.strftime("%m-%d-%y")
+                DRIVER.save_screenshot("{}{}_{}_{}.png".format(SS_PATH, DD_NAME, TODAY, site))
+                print("\nReview complete & screenshot taken!")
+            else:
+                print("Review header not found.. skipping screenshot")
+                DRIVER.quit()
+                file_number += 1
         else:
-            print("Review header not found.. skipping screenshot")
-            DRIVER.quit()
-            file_number += 1
-    else:
-        # checks source code of site for the number of days you have to wait until you can post another review
+            raise KeepLoopin
+    except ContinueLoop:
         print("\nYou have already written a review in the past 30 days.")
         for num in list(range(0, 31)):
             if FINDPHRASE(DRIVER.page_source, 'create a new one in<!-- --> <!-- -->{} days'.format(str(num))):
                 print("You must wait {} days to post another review".format(num))
+        continue
+
     print("\nAll reviews posted and the screenshots saved.")
     print("\nProceeding to text the screenshots to the delivery driver.")
     time.sleep(LONG_DELAY)
