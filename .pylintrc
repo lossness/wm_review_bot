@@ -568,3 +568,4 @@ known-third-party=enchant
 # "BaseException, Exception".
 overgeneral-exceptions=BaseException,
                        Exception
+disable=C0330
