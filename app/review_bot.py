@@ -5,24 +5,19 @@ import json
 import datetime
 import smtplib
 
-from tqdm import tqdm
-from private import config
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
-from email.mime.image import MIMEImage
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By  
-from email.mime.multipart import MIMEMultipart
+from private import config
+
 
 # Setting paths for review templates and filler words as well as all of weedbell site addresses
 SITES = os.path.join("data", "sites.json")
-RATING_FILLERS = os.path.join('data', 'rating_fillers.json')
-REVIEW_TEMPLATES = os.path.join('data', 'review_templates.json')
-MOBILE_CARRIERS = os.path.join('data', 'carrier_info.json')
+RATING_FILLERS = os.path.join("data", "rating_fillers.json")
+REVIEW_TEMPLATES = os.path.join("data", "review_templates.json")
+MOBILE_CARRIERS = os.path.join("data", "carrier_info.json")
 SS_PATH = "C:/Projects/weedmaps_review_bot/data/screenshots/"
 
 
@@ -30,28 +25,34 @@ SS_PATH = "C:/Projects/weedmaps_review_bot/data/screenshots/"
 # This function will keep prompting the user to correct their input until they
 # answer yes on the question
 DD_NAME = input("\nEnter the drivers name : ")
-dd_name_check = input("\n'{}'  Is this correct? Y/N : ".format(DD_NAME))
-while dd_name_check.lower() != "y":
+DD_NAME_CHECK = input("\n'{}'  Is this correct? Y/N : ".format(DD_NAME))
+while DD_NAME_CHECK.lower() != "y":
     DD_NAME = input("\nEnter the drivers name : ")
-    dd_name_check = input("\n'{}'  Is this correct? Y/N : ".format(DD_NAME))
+    DD_NAME_CHECK = input("\n'{}'  Is this correct? Y/N : ".format(DD_NAME))
 
 DD_PHONE = input("\nEnter the drivers phone number : ")
-dd_phone_check = input("\n'{}'  Is this correct? Y/N : ".format(DD_PHONE))
-while dd_phone_check.lower() != "y":
+DD_PHONE_CHECK = input("\n'{}'  Is this correct? Y/N : ".format(DD_PHONE))
+while DD_PHONE_CHECK.lower() != "y":
     DD_PHONE = input("\nEnter the drivers phone number : ")
-    dd_phone_check = input("\n'{}'  Is this correct? Y/N :".format(DD_PHONE))
+    DD_PHONE_CHECK = input("\n'{}'  Is this correct? Y/N :".format(DD_PHONE))
 
-with open(MOBILE_CARRIERS, encoding='utf-8') as MC:
+with open(MOBILE_CARRIERS, encoding="utf-8") as MC:
     MC_LIST = json.loads(MC.read())
 
 for index, carrier in enumerate(MC_LIST):
     print(index, carrier)
 
-print("Please goto https://freecarrierlookup.com/ and enter the drivers phone number to get their carrier.\n")
-DD_CARRIER = input("\n Enter the number cooresponding to the drivers mobile carrier from the list above : ")
+print(
+    "Please goto https://freecarrierlookup.com/ and enter the drivers phone number to get their carrier.\n"
+)
+DD_CARRIER = input(
+    "\n Enter the number cooresponding to the drivers mobile carrier from the list above : "
+)
 DD_C_CHECK = input("\n'{}'  Is this correct? Y/N : ".format(DD_CARRIER))
 while DD_C_CHECK.lower() != "y":
-    DD_CARRIER = input("\n Enter the number cooresponding to the drivers mobile carrier from the list above : ")
+    DD_CARRIER = input(
+        "\n Enter the number cooresponding to the drivers mobile carrier from the list above : "
+    )
     DD_C_CHECK = input("\n'{}'  Is this correct? Y/N : ".format(DD_CARRIER))
 
 # add an index number to each mobile carrier in the dict and then picks the carrier from the users answer to the carrier prompt
@@ -61,7 +62,9 @@ for i, (k, v) in enumerate(MC_LIST.items()):
         DD_SMS_GATEWAY += v
 
 
-with open(SITES, encoding='utf-8') as sites_json, open(RATING_FILLERS, encoding='utf8') as ratings_json, open(REVIEW_TEMPLATES, encoding='utf8') as reviews_json:
+with open(SITES, encoding="utf-8") as sites_json, open(
+    RATING_FILLERS, encoding="utf8"
+) as ratings_json, open(REVIEW_TEMPLATES, encoding="utf8") as reviews_json:
     SITES_LIST = json.loads(sites_json.read())
     RATINGS_LIST = json.loads(ratings_json.read())
     REVIEWS_LIST = json.loads(reviews_json.read())
@@ -80,16 +83,20 @@ time.sleep(10)
 # Initialize selenium webdriver and attaches to chrome.exe using debugger port
 CHROME_OPTIONS = Options()
 CHROME_OPTIONS.debugger_address = "127.0.0.1:9222"
-DRIVER = webdriver.Chrome(options=CHROME_OPTIONS, executable_path=r'C:\Utility\Browserdrivers\chromedriver.exe')
-DRIVER.get('https://weedmaps.com/login?mode=email')
+DRIVER = webdriver.Chrome(
+    options=CHROME_OPTIONS,
+    executable_path=r"C:\Utility\Browserdrivers\chromedriver.exe",
+)
+DRIVER.get("https://weedmaps.com/login?mode=email")
 
-#Test if element exists to scroll to
+# Test if element exists to scroll to
 def check_exists_by_xpath(xpath):
     try:
         DRIVER.find_element_by_xpath(xpath)
     except NoSuchElementException:
         return False
     return True
+
 
 print("\nChecking if browser is currently logged into weedmaps...")
 DRIVER.implicitly_wait(LONG_DELAY)
@@ -114,15 +121,21 @@ else:
 
 # this will be used to check if we have already written a review on the site
 FINDPHRASE = lambda s, var: var.lower() in s.lower()
-# Goes over each weedbell location one by one and rates the review 5 stars, types a randomly chosen review from 
+# Goes over each weedbell location one by one and rates the review 5 stars, types a randomly chosen review from
 # the list of reviews and inserts the DRIVERs name to get credit
 class ContinueLoop(Exception):
     pass
+
+
 KeepLoopin = ContinueLoop
 
-#actions = ActionChains(DRIVER)
-#wait = WebDriverWait(DRIVER, 6)
+# actions = ActionChains(DRIVER)
+# wait = WebDriverWait(DRIVER, 6)
 
+# this loop does not loop properly.. fix it sometime
+#
+#  !
+#  !
 for site in SITES_LIST:
     try:
         DRIVER.get(SITES_LIST[site])
@@ -130,17 +143,23 @@ for site in SITES_LIST:
         if FINDPHRASE(DRIVER.page_source, 'alt="5 Stars"'):
             print("\nNo review posted in the last 30 days.  Posting..")
             page_review_button = DRIVER.find_element_by_xpath("//button[5]")
-            page_review_button = DRIVER.find_element_by_xpath("//button[@alt='5 Stars']")
+            page_review_button = DRIVER.find_element_by_xpath(
+                "//button[@alt='5 Stars']"
+            )
             page_review_button.click()
 
             review_title_field = DRIVER.find_element_by_xpath("//textarea")
-            review_title_field = DRIVER.find_element_by_xpath("//textarea[@data-test-id='title-input']")
+            review_title_field = DRIVER.find_element_by_xpath(
+                "//textarea[@data-test-id='title-input']"
+            )
             for letter in DD_NAME:
                 review_title_field.send_keys(letter)
                 time.sleep(SHORT_DELAY)
 
             review_body_field = DRIVER.find_element_by_xpath("//textarea")
-            review_body_field = DRIVER.find_element_by_xpath("//textarea[@data-test-id='body-input']")
+            review_body_field = DRIVER.find_element_by_xpath(
+                "//textarea[@data-test-id='body-input']"
+            )
 
             random_review = random.choice(list(REVIEWS_LIST.values()))
             random_rating = random.choice(list(RATINGS_LIST.values()))
@@ -151,11 +170,15 @@ for site in SITES_LIST:
                 time.sleep(SHORT_DELAY)
 
             post_review_button = DRIVER.find_element_by_xpath("//button")
-            post_review_button = DRIVER.find_element_by_xpath("//button[@data-test-id='submit-review']")
+            post_review_button = DRIVER.find_element_by_xpath(
+                "//button[@data-test-id='submit-review']"
+            )
             post_review_button.click()
             time.sleep(LONG_DELAY)
 
-            ok_review_button = DRIVER.find_element_by_xpath("//button")
+            ok_review_button = DRIVER.find_element_by_xpath(
+                "/html/body/div[6]/div/div/div/div/div[2]/div/div/div[2]/button"
+            )
             ok_review_button.click()
             print("\nReview posted to the {} location.".format(site))
             time.sleep(LONG_DELAY)
@@ -164,30 +187,41 @@ for site in SITES_LIST:
                 REVIEW_ELEMENT = DRIVER.find_element_by_xpath(REVIEW_XPATH)
                 print("Review header found.. proceeding..")
                 time.sleep(5)
-                #Execute script runs javascript code to scroll to the beginning of the user reviews and the scrolls back up by 150px to get the proper screenshot
-                DRIVER.execute_script("return arguments[0].scrollIntoView();", REVIEW_ELEMENT)
+                # Execute script runs javascript code to scroll to the beginning of the user reviews and the scrolls back up by 150px to get the proper screenshot
+                DRIVER.execute_script(
+                    "return arguments[0].scrollIntoView();", REVIEW_ELEMENT
+                )
                 DRIVER.execute_script("window.scrollBy(0, -150);")
                 TODAY = datetime.date.today()
                 TODAY.strftime("%m-%d-%y")
-                DRIVER.save_screenshot("{}{}_{}_{}.png".format(SS_PATH, DD_NAME, TODAY, site))
+                DRIVER.save_screenshot(
+                    "{}{}_{}_{}.png".format(SS_PATH, DD_NAME, TODAY, site)
+                )
                 print("\nReview complete & screenshot taken!")
             else:
                 print("Review header not found.. skipping screenshot")
-                DRIVER.quit()
                 file_number += 1
         else:
             raise KeepLoopin
     except ContinueLoop:
-        print("\nYou have already written a review in the past 30 days.")
+        print(
+            "\nYou have already written a review for the {} location in the past 30 days.".format(
+                site
+            )
+        )
         for num in list(range(0, 31)):
-            if FINDPHRASE(DRIVER.page_source, 'create a new one in<!-- --> <!-- -->{} days'.format(str(num))):
+            if FINDPHRASE(
+                DRIVER.page_source,
+                "create a new one in<!-- --> <!-- -->{} days".format(str(num)),
+            ):
                 print("You must wait {} days to post another review".format(num))
         continue
 
-    print("\nAll reviews posted and the screenshots saved.")
-    print("\nProceeding to text the screenshots to the delivery driver.")
-    time.sleep(LONG_DELAY)
-    DRIVER.quit()
+
+print("\nAll reviews posted and the screenshots saved.")
+print("\nProceeding to text the screenshots to the delivery driver.")
+time.sleep(LONG_DELAY)
+DRIVER.quit()
 
 
 # Sends the collected screenshots via text message to the delivery driver
@@ -201,22 +235,23 @@ def text_screenshots(phone, gateway, ss_location):
     server.starttls()
     server.login(email, pas)
     msg = MIMEMultipart()
-    msg['Subject'] = 'Weedmaps reviews'
-    msg.preamble = 'Weedmaps reviews'
+    msg["Subject"] = "Weedmaps reviews"
+    msg.preamble = "Weedmaps reviews"
     # Iterates over the screenshot folder and sends all screenshots from today
     for file in os.listdir(ss_location):
         filename = os.fsdecode(file)
         # looks for images with the drivers name and todays date
         if filename.startswith("{}_{}".format(DD_NAME, TODAY)):
-            msg['From'] = email
-            msg['To'] = "{}{}".format(phone, gateway)
-            fp = open("{}/{}".format(ss_location, filename), 'rb')
+            msg["From"] = email
+            msg["To"] = "{}{}".format(phone, gateway)
+            fp = open("{}/{}".format(ss_location, filename), "rb")
             img = MIMEImage(fp.read())
             msg.attach(img)
             server.send_message(msg)
             time.sleep(2)
             print("\nPicture sent to driver")
     server.quit()
+
 
 text_screenshots(DD_PHONE, DD_CARRIER, SS_PATH)
 print("\nAll reviews sent to driver! Enjoy..")
